@@ -130,6 +130,9 @@ const ClosetScreen = () => {
         <Surface style={styles.headerCard}>
           <Title style={styles.headerTitle}>My Closet</Title>
           <Text style={styles.headerSubtitle}>Manage your sneaker collection</Text>
+          <Text style={styles.countText}>
+            {closetSneakers.length} {closetSneakers.length === 1 ? 'sneaker' : 'sneakers'} in your closet
+          </Text>
         </Surface>
 
         <Searchbar
@@ -242,6 +245,12 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: TYPOGRAPHY.body.fontSize,
     color: COLORS.textSecondary,
+  },
+  countText: {
+    fontSize: TYPOGRAPHY.body.fontSize,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginTop: SPACING.sm,
   },
   searchBar: {
     marginBottom: SPACING.lg,

@@ -72,6 +72,8 @@ const LoginScreen = () => {
           const user = await userResponse.json();
           await SecureStore.setItemAsync('user', JSON.stringify(user));
           setUser(user);
+          // Navigate to main app after successful login
+          router.replace('/(tabs)');
         } else {
           console.error('Error fetching user data:', userResponse.status);
         }

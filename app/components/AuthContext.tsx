@@ -33,17 +33,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true); // Ensure loading is true at the start
       try {
         const storedUser = await SecureStore.getItemAsync('user');
-        if (storedUser) {
-          const parsedUser: User = JSON.parse(storedUser);
-          setUser(parsedUser);
+        const storedToken = await SecureStore.getItemAsync('accessToken');
+
+        if (storedUser && storedToken) {
+          const parsedUser = JSON.parse(storedUser);
+          // Handle both array and single user formats
+          const userData = Array.isArray(parsedUser) ? parsedUser[0] : parsedUser;
+          setUser(userData);
           setIsAuthenticated(true);
         } else {
-          // Explicitly set to not authenticated if no user is found
+          // Explicitly set to not authenticated if no user or token is found
           setIsAuthenticated(false);
+          setUser(null);
         }
       } catch (error) {
         console.error('Error retrieving user data:', error);
         setIsAuthenticated(false); // Assume not authenticated on error
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -57,7 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     isLoading, // Add isLoading to the context value
     setUser: async (newUser: User | null) => {
-      setIsLoading(true); // Set loading true during user update
       if (newUser) {
         try {
           await SecureStore.setItemAsync('user', JSON.stringify(newUser));
@@ -70,13 +75,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         try {
           await SecureStore.deleteItemAsync('user');
+          await SecureStore.deleteItemAsync('accessToken');
           setUser(null);
           setIsAuthenticated(false);
         } catch (error) {
           console.error('Error removing user data:', error);
         }
       }
-      setIsLoading(false); // Set loading false after user update
     },
   };
 

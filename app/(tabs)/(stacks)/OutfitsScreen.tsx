@@ -83,21 +83,15 @@ const OutfitsScreen = () => {
     };
 
     const renderOutfitCard = ({ item }: { item: Outfit }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
             style={styles.outfitCard}
             onPress={() => setSelectedOutfit(item)}
         >
             <Surface style={styles.outfitCardInner} elevation={2}>
-                <Image 
-                    source={{ uri: item.imageUrl }} 
+                <Image
+                    source={{ uri: item.imageUrl }}
                     style={styles.outfitImage}
                     resizeMode="cover"
-                />
-                <IconButton
-                    icon="heart-outline"
-                    size={24}
-                    style={styles.likeButton}
-                    onPress={() => {}}
                 />
             </Surface>
         </TouchableOpacity>
@@ -258,12 +252,6 @@ const styles = StyleSheet.create({
     outfitImage: {
         width: '100%',
         height: width * 0.6,
-    },
-    likeButton: {
-        position: 'absolute',
-        top: SPACING.xs,
-        right: SPACING.xs,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
     },
     emptyState: {
         flex: 1,

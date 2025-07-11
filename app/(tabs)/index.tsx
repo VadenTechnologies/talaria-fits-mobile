@@ -9,7 +9,7 @@ import Header from '../../components/Header';
 // Define allowed brands outside the component
 const allowedBrands = ["Nike", "adidas", "Jordan", "Reebok", "New Balance"];
 
-const SneakerCard = React.memo(({ item, addToCloset }: { item: Sneaker; addToCloset: (sneaker: Sneaker) => void }) => {
+const SneakerCard = React.memo(({ item, addToCloset, isInCloset }: { item: Sneaker; addToCloset: (sneaker: Sneaker) => void; isInCloset: boolean }) => {
     const router = useRouter();
 
     return (
@@ -24,8 +24,12 @@ const SneakerCard = React.memo(({ item, addToCloset }: { item: Sneaker; addToClo
                 <Paragraph style={{ textAlign: 'left', fontWeight: 'light', textTransform: 'capitalize' }}>
                     <Text>{item.name}</Text>
                 </Paragraph>
-                <Button onPress={() => addToCloset(item)}>
-                    <Text>Add To Closet</Text>
+                <Button
+                    onPress={isInCloset ? undefined : () => addToCloset(item)}
+                    disabled={isInCloset}
+                    mode={isInCloset ? "outlined" : "contained"}
+                >
+                    <Text>{isInCloset ? "Added" : "Add To Closet"}</Text>
                 </Button>
             </Card.Content>
         </Card>
@@ -37,9 +41,31 @@ const LibraryScreen = () => {
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(20);
     const [sneakers, setSneakers] = useState<Sneaker[]>([]);
-    const { addToCloset } = useAuth();
+    const [closetSneakerIds, setClosetSneakerIds] = useState<Set<string>>(new Set());
+    const { addToCloset, checkIfInCloset, token } = useAuth();
 
     const [triggerSearch, { data, error, isLoading, isFetching }] = useLazySearchSneakersQuery();
+
+    // Fetch closet sneakers to check which ones are already added
+    const fetchClosetSneakers = useCallback(async () => {
+        if (!token) return;
+
+        try {
+            const response = await fetch(`https://talariafitsbackend.uk.r.appspot.com/closet`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const sneakerIds = new Set(data.data.map((item: any) => item.snickerId));
+                setClosetSneakerIds(sneakerIds);
+            }
+        } catch (error) {
+            console.error('Error fetching closet sneakers:', error);
+        }
+    }, [token]);
 
     // Append new data, filtering for valid images AND allowed brands
     useEffect(() => {
@@ -60,6 +86,11 @@ const LibraryScreen = () => {
             });
         }
     }, [data, page]); // Removed allowedBrands from dependencies
+
+    // Fetch closet sneakers on mount and when token changes
+    useEffect(() => {
+        fetchClosetSneakers();
+    }, [fetchClosetSneakers]);
 
     // Reset page to 0 when searchQuery changes, and clear sneakers
     useEffect(() => {
@@ -82,6 +113,14 @@ const LibraryScreen = () => {
             clearTimeout(handler);
         };
     }, [triggerSearch, searchQuery, page, limit]);
+
+    const handleAddToCloset = useCallback(async (sneaker: Sneaker) => {
+        const success = await addToCloset(sneaker);
+        if (success) {
+            // Refresh closet status after successful addition
+            fetchClosetSneakers();
+        }
+    }, [addToCloset, fetchClosetSneakers]);
 
     const handleLoadMore = useCallback(() => {
         if (!isFetching && !isLoading) {
@@ -145,7 +184,11 @@ const LibraryScreen = () => {
             <FlatList
                 data={sneakers}
                 renderItem={({ item }) => (
-                    <SneakerCard item={item} addToCloset={addToCloset} />
+                    <SneakerCard
+                        item={item}
+                        addToCloset={handleAddToCloset}
+                        isInCloset={closetSneakerIds.has(item.id)}
+                    />
                 )}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 onEndReached={handleLoadMore}
